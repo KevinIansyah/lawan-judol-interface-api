@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+*.env
+.venv/
+.env.*
+.vscode/
+storage/*
+app/model/config.json
+app/model/model.onnx
+app/model/special_tokens_map.json
+app/model/tokenizer_config.json
+app/model/vocab.txt
