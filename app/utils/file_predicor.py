@@ -1,58 +1,48 @@
 import json
-from pathlib import Path
-from app.utils.text_cleaner import clean_text
+from app.utils.text_cleaner import clean_text_classifier
 from app.model.classifier import GamblingClassifier
 
-model = GamblingClassifier("app/model")
+classifier_model = GamblingClassifier("app/model/classifier")
+
+def split_comments(comments, max_per_chunk=100):
+    return [comments[i:i + max_per_chunk] for i in range(0, len(comments), max_per_chunk)]
 
 def process_file(input_path: str, output_judol_path: str, output_non_judol_path: str):
     with open(input_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    judol_data = {
-        "total_comments": 0,
-        "total_chunks": 0,
-        "chunks": []
-    }
-
-    non_judol_data = {
-        "total_comments": 0,
-        "total_chunks": 0,
-        "chunks": []
-    }
+    all_judol = []
+    all_non_judol = []
 
     for chunk in data["chunks"]:
         comments = chunk["comments"]
-        texts = [clean_text(comment["text"]) for comment in comments]
-        preds = model.predict_batch(texts)
-
-        judol_chunk = {"chunk_id": chunk["chunk_id"], "comments": []}
-        non_judol_chunk = {"chunk_id": chunk["chunk_id"], "comments": []}
+        texts = [clean_text_classifier(comment["text"]) for comment in comments]
+        preds = classifier_model.predict_batch(texts)
 
         for comment, pred in zip(comments, preds):
             comment["label"] = pred
             if pred == 1:
-                judol_chunk["comments"].append(comment)
+                all_judol.append(comment)
             else:
-                non_judol_chunk["comments"].append(comment)
+                all_non_judol.append(comment)
 
-        if judol_chunk["comments"]:
-            judol_data["chunks"].append(judol_chunk)
-            judol_data["total_comments"] += len(judol_chunk["comments"])
+    judol_chunks = split_comments(all_judol, max_per_chunk=100)
+    non_judol_chunks = split_comments(all_non_judol, max_per_chunk=100)
 
-        if non_judol_chunk["comments"]:
-            non_judol_data["chunks"].append(non_judol_chunk)
-            non_judol_data["total_comments"] += len(non_judol_chunk["comments"])
+    judol_data = {
+        "total_comments": len(all_judol),
+        "total_chunks": len(judol_chunks),
+        "chunks": [{"chunk_id": i + 1, "comments": chunk} for i, chunk in enumerate(judol_chunks)]
+    }
 
-    judol_data["total_chunks"] = len(judol_data["chunks"])
-    non_judol_data["total_chunks"] = len(non_judol_data["chunks"])
+    non_judol_data = {
+        "total_comments": len(all_non_judol),
+        "total_chunks": len(non_judol_chunks),
+        "chunks": [{"chunk_id": i + 1, "comments": chunk} for i, chunk in enumerate(non_judol_chunks)]
+    }
 
     with open(output_judol_path, "w", encoding="utf-8") as f:
         json.dump(judol_data, f, ensure_ascii=False, indent=2)
 
     with open(output_non_judol_path, "w", encoding="utf-8") as f:
         json.dump(non_judol_data, f, ensure_ascii=False, indent=2)
-
-    print("✅ Selesai. Hasil disimpan di:")
-    print(f"   - Judol: {output_judol_path}")
-    print(f"   - Non-Judol: {output_non_judol_path}")
