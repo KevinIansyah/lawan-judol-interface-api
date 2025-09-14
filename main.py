@@ -91,6 +91,21 @@ def predict_file(file: UploadFile = File(...), api_key: str = Depends(get_api_ke
     }
 
 
-@app.get("/download/{filename}")
-def download_file(filename: str, api_key: str = Depends(get_api_key)):
-    return FileResponse(path=filename, filename=filename, media_type='application/json')
+@app.get("/download/{file_path:path}")
+def download_file(file_path: str, api_key: str = Depends(get_api_key)):
+    full_path = Path(file_path).resolve()
+    storage_path = Path("storage").resolve()
+    
+    if not str(full_path).startswith(str(storage_path)):
+        raise HTTPException(status_code=403, detail="Access forbidden")
+    
+    if not full_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    filename = full_path.name
+    
+    return FileResponse(
+        path=str(full_path), 
+        filename=filename, 
+        media_type='application/json'
+    )

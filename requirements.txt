@@ -5,3 +5,4 @@ torch
 optimum[onnxruntime]
 unidecode
 python-dotenv
+python-multipart
