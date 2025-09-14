@@ -9,3 +9,4 @@ __pycache__/
 storage/*
 app/model/ner
 app/model/classifier
+.env

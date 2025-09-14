@@ -38,6 +38,7 @@ def clean_text_keywoard(text):
         "\U00002B00-\U00002BFF"  # arrows & misc symbols
         "\U00002300-\U000023FF"  # misc technical
         "\U0001F7E0-\U0001F7EB"  # geometric shapes extended
+        "\U0001F000-\U0001F02F"  # mahjong tiles
         "]+", flags=re.UNICODE)
     text = emoji_pattern.sub(" ", text)
     text = re.sub(r'\s+', ' ', text)

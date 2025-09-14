@@ -4,3 +4,4 @@ transformers
 torch
 optimum[onnxruntime]
 unidecode
+python-dotenv
